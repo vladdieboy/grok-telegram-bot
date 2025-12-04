@@ -111,6 +111,6 @@ def handle(message):
 if __name__ == '__main__':
     # Устанавливаем webhook (замени URL на свой Render URL после деплоя)
     bot.remove_webhook()
-    bot.set_webhook(url=f"https://твой-url-onrender-com/{TELEGRAM_TOKEN}")
+    bot.set_webhook(url=f"https://grok-telegram-bot-jkw2.onrender.com/{TELEGRAM_TOKEN}")
     print("Grok 4.1 бот запущен на Render с webhook!")
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
