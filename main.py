@@ -3,21 +3,39 @@ import telebot
 import requests
 import base64
 import time
+from flask import Flask, request, abort
 
-# Токены берём из переменных окружения Railway
+# Токены из переменных окружения
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 GROK_API_KEY = os.getenv("GROK_API_KEY")
 
 if not TELEGRAM_TOKEN or not GROK_API_KEY:
-    print("ОШИБКА: Добавьте токены в Variables!")
+    print("ОШИБКА: Добавьте токены в Environment Variables!")
     exit(1)
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
+app = Flask(__name__)
 
 CHAT_URL = "https://api.x.ai/v1/chat/completions"
 IMAGE_URL = "https://api.x.ai/v1/images/generations"
 
 history = {}
+
+# Health check endpoint для Render (чтобы не спал)
+@app.route('/health', methods=['GET'])
+def health():
+    return "OK", 200
+
+# Webhook endpoint
+@app.route(f'/{TELEGRAM_TOKEN}', methods=['POST'])
+def webhook():
+    if request.headers.get('content-type') == 'application/json':
+        json_string = request.get_json()
+        update = telebot.types.Update.de_json(json_string)
+        bot.process_new_updates([update])
+        return ''
+    else:
+        abort(403)
 
 @bot.message_handler(func=lambda m: True)
 def handle(message):
@@ -90,6 +108,9 @@ def handle(message):
     except Exception as e:
         bot.reply_to(message, f"Ошибка: {e}")
 
-if __name__ == "__main__":
-    print("Grok 4.1 бот запущен на Railway!")
-    bot.infinity_polling(none_stop=True, interval=0, timeout=90)
+if __name__ == '__main__':
+    # Устанавливаем webhook (замени URL на свой Render URL после деплоя)
+    bot.remove_webhook()
+    bot.set_webhook(url=f"https://твой-url-onrender-com/{TELEGRAM_TOKEN}")
+    print("Grok 4.1 бот запущен на Render с webhook!")
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
